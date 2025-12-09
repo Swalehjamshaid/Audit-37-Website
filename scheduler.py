@@ -1,10 +1,10 @@
-# scheduler.py (Updated to fix RQ Import Error)
+# scheduler.py (FINAL CORRECTED CODE)
 
 import os
 import sys
 from datetime import datetime, timedelta
 from redis import Redis
-from rq import Queue, connections # CORRECTED: Added 'connections'
+from rq import Queue, Connection # Reverting to original, stable import
 from rq_scheduler import Scheduler
 from dotenv import load_dotenv
 
@@ -55,8 +55,8 @@ if __name__ == '__main__':
         redis_conn = Redis.from_url(REDIS_URL)
         
         # Initialize the RQ Scheduler
-        # CORRECTED USAGE: Scheduler also needs to be initialized with the connection.
-        with connections.Connection(redis_conn):
+        # Using the standard Connection class directly imported from rq
+        with Connection(redis_conn):
             scheduler = Scheduler(connection=redis_conn)
             
             # Clear any existing jobs to ensure clean restart
