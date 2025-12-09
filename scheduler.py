@@ -1,10 +1,10 @@
-# scheduler.py
+# scheduler.py (Updated to fix RQ Import Error)
 
 import os
 import sys
 from datetime import datetime, timedelta
 from redis import Redis
-from rq import Queue
+from rq import Queue, connections # CORRECTED: Added 'connections'
 from rq_scheduler import Scheduler
 from dotenv import load_dotenv
 
@@ -37,7 +37,6 @@ def queue_daily_reports():
         
         for user in scheduled_users:
             # Enqueue the report generation task for each user
-            # Job timeout is generous to allow for the simulated 2-second audit + PDF generation
             task_queue.enqueue(
                 send_scheduled_report, 
                 user.id, 
@@ -56,25 +55,27 @@ if __name__ == '__main__':
         redis_conn = Redis.from_url(REDIS_URL)
         
         # Initialize the RQ Scheduler
-        scheduler = Scheduler(connection=redis_conn)
-        
-        # Clear any existing jobs to ensure clean restart
-        scheduler.empty()
+        # CORRECTED USAGE: Scheduler also needs to be initialized with the connection.
+        with connections.Connection(redis_conn):
+            scheduler = Scheduler(connection=redis_conn)
+            
+            # Clear any existing jobs to ensure clean restart
+            scheduler.empty()
 
-        # Define the daily interval
-        daily_interval = timedelta(hours=24) 
-        
-        # Schedule the job. Run immediately upon startup, then every 24 hours.
-        scheduler.schedule(
-            scheduled_time=datetime.utcnow() + timedelta(seconds=10), 
-            func=queue_daily_reports,
-            interval=daily_interval,
-            repeat=None 
-        )
-        
-        print("RQ Scheduler started. Daily report queuing job is active.")
-        scheduler.run()
-        
+            # Define the daily interval
+            daily_interval = timedelta(hours=24) 
+            
+            # Schedule the job. Run immediately upon startup, then every 24 hours.
+            scheduler.schedule(
+                scheduled_time=datetime.utcnow() + timedelta(seconds=10), 
+                func=queue_daily_reports,
+                interval=daily_interval,
+                repeat=None 
+            )
+            
+            print("RQ Scheduler started. Daily report queuing job is active.")
+            scheduler.run()
+            
     except Exception as e:
-        print(f"FATAL: RQ Scheduler failed to start: {e}")
+        print(f"FATAL: RQ Scheduler failed to start. Error: {e}")
         exit(1)
