@@ -1,33 +1,30 @@
-# Core web framework (adjust if you use Flask/Django instead)
-fastapi>=0.110.0
-uvicorn[standard]>=0.25.0
-gunicorn>=22.0.0
+# Core web server & framework
+fastapi>=0.115.0
+uvicorn[standard]>=0.30.0
+gunicorn>=23.0.0
 
-# Common utilities almost every project needs
-pydantic>=2.5.0
-pydantic-settings>=2.0.0
-python-multipart>=0.0.6
-requests>=2.31.0
-httpx>=0.25.0
+# Data validation & settings
+pydantic>=2.8.0
+pydantic-settings>=2.4.0
 
-# Security / auth (common)
-python-jose[cryptography]>=3.3.0
+# HTTP & forms
+httpx>=0.27.0
+python-multipart>=1.0.0
+
+# Utilities (most projects need these)
+python-dotenv>=1.0.1
+requests>=2.32.0
+
+# Security (if you use auth)
 passlib[bcrypt]>=1.7.4
-python-dotenv>=1.0.0
+python-jose[cryptography]>=3.3.0
 
-# Database (if you use any)
-sqlalchemy>=2.0.0
-psycopg2-binary>=2.9.9
-alembic>=1.13.0
+# Database (remove if you don't use)
+# sqlalchemy>=2.0.0
+# psycopg2-binary>=2.9.9
 
-# Async / utilities
-asyncio
-anyio>=4.0.0
-
-# -------------------------- MOST IMPORTANT LINE --------------------------
-# This installs your own local project/code as a package so "import webaudit" works
+# ──────────────────────────────
+# THIS LINE IS THE FINAL FIX
+# It installs your own code (including the 'webaudit' folder) as a real package
 -e .
-# -----------------------------------------------------------------------
-
-# Optional but recommended for Railway
-railway>=0.1.0
+# ──────────────────────────────
