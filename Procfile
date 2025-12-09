@@ -1,1 +1,1 @@
-web: gunicorn webaudit.wsgi:application --log-file -
+echo "web: uvicorn main:app --host 0.0.0.0 --port \$PORT" > Procfile
