@@ -2,7 +2,7 @@
 
 import os
 from redis import Redis
-from rq import Worker, Connection # Reverting to original, stable import
+from rq import Worker, connections # CORRECTED: Import 'connections' module instead of 'Connection' class
 from dotenv import load_dotenv
 
 # Load environment variables
@@ -15,8 +15,8 @@ if __name__ == '__main__':
     try:
         redis_conn = Redis.from_url(REDIS_URL)
         
-        # Using the standard Connection class directly imported from rq
-        with Connection(redis_conn): 
+        # CORRECTED USAGE: Access the Connection class inside the connections module
+        with connections.Connection(redis_conn): 
             # Worker processes tasks from the 'default' queue
             worker = Worker(['default'], connection=redis_conn)
             print("RQ Worker started. Listening for tasks...")
