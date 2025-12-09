@@ -1,0 +1,19 @@
+# File: pyproject.toml
+[build-system]
+requires = ["setuptools>=61.0", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "audit-37-website"
+version = "0.1.0"
+description = "Audit-37 Website Project"
+requires-python = ">=3.11"
+dependencies = []
+
+[tool.setuptools.packages.find]
+# Automatically find all packages in the project
+where = ["."]
+
+[tool.setuptools.package-data]
+# Include all files in the packages
+"*" = ["*.*"]
