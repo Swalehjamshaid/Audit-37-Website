@@ -2,30 +2,36 @@
 
 import os
 from redis import Redis
-from rq import Worker
+from rq import Worker, Connection
 from dotenv import load_dotenv
 
 # Load environment variables
 load_dotenv()
 
 # Get Redis connection details
-REDIS_URL = os.getenv('REDIS_URL', 'redis://localhost:6379')
+# CRITICAL FIX: REMOVED the fallback value 'redis://localhost:6379'
+REDIS_URL = os.getenv('REDIS_URL') 
 
 if __name__ == '__main__':
     try:
-        # Use Redis.from_url to handle parsing the full URL (including auth/password)
+        # Check if the URL is missing before attempting connection
+        if not REDIS_URL:
+            # Raise an error if the essential variable is missing
+            raise EnvironmentError("REDIS_URL environment variable is missing!")
+            
+        # Use Redis.from_url to handle parsing the full secure URL
         redis_conn = Redis.from_url(REDIS_URL) 
         
-        # Check connection health to ensure auth succeeds before starting worker
+        # Check connection health to ensure auth succeeds
         redis_conn.ping() 
         print("Successfully connected and authenticated with Redis.")
 
         # Worker processes tasks from the 'default' queue
-        worker = Worker(['default'], connection=redis_conn)
-        print("RQ Worker started. Listening for tasks...")
-        worker.work() 
+        with Connection(redis_conn): 
+            worker = Worker(['default'], connection=redis_conn)
+            print("RQ Worker started. Listening for tasks...")
+            worker.work() 
             
     except Exception as e:
         print(f"Failed to start RQ Worker: {e}")
-        # The AuthenticationError will be caught here
         exit(1)
