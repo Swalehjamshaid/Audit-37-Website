@@ -1,30 +1,25 @@
-# ───────────────────── TOP OF FILE (add this) ─────────────────────
-import os
+#!/usr/bin/env python3
 import sys
 from pathlib import Path
 
-# Fix local imports (webaudit folder)
+# CRITICAL: Add current directory to Python path so 'webaudit' is found
 sys.path.insert(0, str(Path(__file__).parent.resolve()))
 
+# Now your imports work (keep the rest of your code below)
 from fastapi import FastAPI
 
-# Create the app (MUST be named "app" for Railway)
-app = FastAPI(title="Audit-37 Website", version="1.0")
+app = FastAPI(title="Audit-37 Website")  # Make sure this is named 'app'
 
-# ───────────────────── YOUR EXISTING CODE (keep all your routes) ─────────────────────
-# Example – keep or add this test route
+# Add this test route if not already there (for / endpoint)
 @app.get("/")
 async def root():
-    return {"message": "Audit-37 Website is now LIVE on Railway!"}
+    return {"message": "Audit-37 Website is LIVE! No more errors."}
 
-# Keep all your existing @app.get(), @app.post(), imports from webaudit, etc.
-# Example:
-# from webaudit import some_function
+# Keep ALL your existing code/imports/routes below here
+# e.g., from webaudit import whatever  # This now works!
 # ... your code ...
 
-# ───────────────────── BOTTOM OF FILE (add this) ─────────────────────
-# This makes it work both locally and on Railway
 if __name__ == "__main__":
     import uvicorn
     port = int(os.environ.get("PORT", 8000))
-    uvicorn.run("main:app", host="0.0.0.0", port=port, reload=True)
+    uvicorn.run(app, host="0.0.0.0", port=port)
