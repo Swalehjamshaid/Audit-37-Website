@@ -1,23 +1,28 @@
-# Force Python environment
+# nixpacks.toml
+
+# Required for WeasyPrint on Railway/Nixpacks
 [phases.setup]
 nixPkgs = [
     "python311",
-    "pip",
-    "pkg-config",
     "cairo",
     "pango",
+    "gdk-pixbuf",
     "glib",
+    "harfbuzz",
+    "fribidi",
     "gobject-introspection",
     "libxml2",
     "libxslt",
-    "fontconfig"
+    "fontconfig",
+    "freetype",
+    "pkg-config"
 ]
 
-[phases.install]
-cmds = [
-    "pip install --upgrade pip",
-    "pip install -r requirements.txt"
+aptPkgs = [
+    "libpango-1.0-0",
+    "libpangocairo-1.0-0",
+    "libcairo2",
+    "libffi-dev",
+    "libssl-dev",
+    "fonts-dejavu"
 ]
-
-[phases.start]
-cmd = "gunicorn --bind 0.0.0.0:$PORT app:app"
