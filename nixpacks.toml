@@ -1,15 +1,23 @@
-# nixpacks.toml
-
-# This is the most complete list of system libraries required for WeasyPrint 
-# on Nix-based container platforms (like Railway).
+# Force Python environment
 [phases.setup]
 nixPkgs = [
-    "pkg-config", 
-    "cairo", 
-    "pango", 
-    "glib", 
+    "python311",
+    "pip",
+    "pkg-config",
+    "cairo",
+    "pango",
+    "glib",
     "gobject-introspection",
-    "libxml2", 
-    "libxslt", 
+    "libxml2",
+    "libxslt",
     "fontconfig"
 ]
+
+[phases.install]
+cmds = [
+    "pip install --upgrade pip",
+    "pip install -r requirements.txt"
+]
+
+[phases.start]
+cmd = "gunicorn --bind 0.0.0.0:$PORT app:app"
