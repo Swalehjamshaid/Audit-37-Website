@@ -1,5 +1,11 @@
 # nixpacks.toml
-
-# Install required system dependencies for WeasyPrint (Cairo and Pango)
+# Install all necessary dependencies for WeasyPrint, covering Pango, Cairo, 
+# and the GObject/GLib dependencies required by the crash logs.
 [phases.setup]
-nixPkgs = ["pkg-config", "cairo", "pango"]
+nixPkgs = [
+    "pkg-config", 
+    "cairo", 
+    "pango", 
+    "gobject-introspection", 
+    "glib"
+]
