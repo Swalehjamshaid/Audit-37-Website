@@ -1,0 +1,15 @@
+{% extends 'base.html' %}
+{% block content %}
+<div class="text-center py-5">
+    <h1 class="display-4 text-primary">FF Tech WebAudit</h1>
+    <p class="lead">Professional Railway Website Performance Auditor</p>
+    {% if not user.is_authenticated %}
+    <div class="my-4">
+        <a href="{% url 'login' %}" class="btn btn-primary btn-lg mx-2">Login</a>
+        <a href="{% url 'register' %}" class="btn btn-success btn-lg mx-2">Register</a>
+    </div>
+    {% else %}
+    <a href="{% url 'dashboard' %}" class="btn btn-primary btn-lg">Go to Dashboard</a>
+    {% endif %}
+</div>
+{% endblock %}
