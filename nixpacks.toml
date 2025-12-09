@@ -1,0 +1,5 @@
+# nixpacks.toml
+
+# Install required system dependencies for WeasyPrint (Cairo and Pango)
+[phases.setup]
+nixPkgs = ["pkg-config", "cairo", "pango"]
