@@ -1,11 +1,15 @@
 # nixpacks.toml
-# Install all necessary dependencies for WeasyPrint, covering Pango, Cairo, 
-# and the GObject/GLib dependencies required by the crash logs.
+
+# This is the most complete list of system libraries required for WeasyPrint 
+# on Nix-based container platforms (like Railway).
 [phases.setup]
 nixPkgs = [
     "pkg-config", 
     "cairo", 
     "pango", 
-    "gobject-introspection", 
-    "glib"
+    "glib", 
+    "gobject-introspection",
+    "libxml2", 
+    "libxslt", 
+    "fontconfig"
 ]
