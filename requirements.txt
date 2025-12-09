@@ -1,5 +1,2 @@
-# File: requirements.txt
 fastapi
 uvicorn[standard]
-gunicorn
--e .
