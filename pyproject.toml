@@ -1,5 +1,6 @@
+# File: pyproject.toml ← MUST be in root
 [build-system]
-requires = ["setuptools>=61", "wheel"]
+requires = ["setuptools>=61", "wheel", "setuptools-scm"]
 build-backend = "setuptools.build_meta"
 
 [project]
@@ -7,5 +8,5 @@ name = "audit-37-website"
 version = "0.1.0"
 requires-python = ">=3.11"
 
-[tool.setuptools.packages.find]
-where = ["."]
+[tool.setuptools]
+packages = ["webaudit"]
