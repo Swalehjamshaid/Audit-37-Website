@@ -11,3 +11,4 @@ Flask-Mail
 redis
 rq
 rq-scheduler
+uvicorn  <-- ADD THIS LINE
