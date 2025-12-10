@@ -1,1 +1,1 @@
-gunicorn --bind 0.0.0.0:$PORT -k uvicorn.workers.UvicornWorker app:app
+web: gunicorn audit37website.wsgi:application --bind 0.0.0.0:$PORT --workers 2 --timeout 120 --log-level info
