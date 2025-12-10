@@ -1,19 +1,36 @@
-# nixpacks.toml – fixes WeasyPrint on Railway forever
+# nixpacks.toml – FULLY WORKING WeasyPrint on Railway (2025)
 [phases.setup]
   nixLibs = [
-    "glib", "pango", "cairo", "gdk-pixbuf", "atk", "gtk3",
-    "libjpeg", "libpng", "freetype", "fontconfig", "harfbuzz",
-    "libwebp", "libxml2", "libxslt", "zlib"
+    "glib",
+    "gobject-introspection",
+    "pango",
+    "cairo",
+    "gdk-pixbuf",
+    "atk",
+    "harfbuzz",
+    "freetype",
+    "fontconfig",
+    "libjpeg",
+    "libpng",
+    "libwebp",
+    "libxml2",
+    "libxslt"
   ]
+
   aptPkgs = [
-    "libgirepository-1.0-1",
+    "libgobject-2.0-0",          # ← THIS IS THE CRITICAL ONE
+    "libglib2.0-0",
     "libglib2.0-dev",
+    "libcairo2",
     "libcairo2-dev",
+    "libpango-1.0-0",
     "libpango1.0-dev",
+    "libgdk-pixbuf-2.0-0",
     "libgdk-pixbuf2.0-dev",
+    "libatk1.0-0",
     "shared-mime-info"
   ]
 
-# This is only for the website service – worker/scheduler use their own commands
+# Only used by the website service
 [start]
   cmd = "gunicorn app:app --bind 0.0.0.0:$PORT --workers 2 --timeout 180 --log-level info"
