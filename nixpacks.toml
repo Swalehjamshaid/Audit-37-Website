@@ -1,19 +1,23 @@
-# nixpacks.toml — WeasyPrint + Python 3.13 fix for Railway
+# nixpacks.toml
 [phases.setup]
-  nixPkgs = ["python313", "gcc", "glib", "pango", "cairo", "gdk-pixbuf", "libjpeg", "libpng", "zlib"]
-  aptPkgs = [
-    "libpango-1.0-0",
-    "libpangocairo-1.0-0",
-    "libcairo2",
-    "libgdk-pixbuf2.0-0",
-    "libglib2.0-0",
-    "libgirepository-1.0-1",
+  nixLibs = [
+    "glib",
+    "pango",
+    "libjpeg",
+    "libpng",
+    "zlib",
+    "freetype",
+    "fontconfig",
     "libxml2",
-    "libxslt1.1",
-    "fonts-dejavu-core",
-    "fonts-liberation"
+    "libxslt",
+    "cairo",
+    "gdk-pixbuf",
+    "atk",
+    "gtk3",
+    "harfbuzz",
+    "libwebp"
   ]
+  aptPkgs = ["libgirepository-1.0-1", "libglib2.0-dev", "libcairo2-dev", "libpango1.0-dev", "libgdk-pixbuf2.0-dev", "shared-mime-info"]
 
-# Force correct Python version
 [start]
-  cmd = "gunicorn app:app --bind 0.0.0.0:$PORT --workers 2 --timeout 180"
+  cmd = "gunicorn app:app --bind 0.0.0.0:$PORT --workers 2 --timeout 180 --log-level info"
