@@ -1,84 +1,78 @@
-# scheduler.py (FINAL CORRECTED CODE)
-
+# scheduler.py — Railway-proof version (2025)
 import os
-import sys
 from datetime import datetime, timedelta
 from redis import Redis
 from rq import Queue
 from rq_scheduler import Scheduler
-from dotenv import load_dotenv
 
-# Add the parent directory to the path to import app and its functions
-sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '.')))
+# --- CRITICAL: Fix Python path for Railway ---
+# Railway runs from /app, your code is in /app/audit37website (or similar)
+import sys
+project_root = os.path.dirname(os.path.abspath(__file__))
+if project_root not in sys.path:
+    sys.path.insert(0, project_root)
 
-# Import the application context and task function from app.py
-from app import app, db, User, send_scheduled_report
+# Now we can safely import Django stuff
+os.environ.setdefault('DJANGO_SETTINGS_MODULE', 'audit37website.settings')
+import django
+django.setup()
 
-# --- Scheduler Logic ---
+from app import send_scheduled_report
+from accounts.models import User  # adjust if your User model is elsewhere
+
 
 def queue_daily_reports():
-    """
-    Function executed by the RQ Scheduler daily.
-    It checks the database for users who have scheduled reports
-    and queues a task for each of them.
-    """
-    with app.app_context():
-        # Find all users who have a scheduled website set
-        scheduled_users = User.query.filter(User.scheduled_website.isnot(None)).all()
+    """Run daily: find users with scheduled_website and enqueue report jobs"""
+    from django.db import connection
+    with connection.cursor():  # forces DB connection in thread
+        users = User.objects.filter(scheduled_website__isnull=False).exclude(scheduled_website='')
         
-        if not scheduled_users:
-            print(f"Scheduler: No active reports scheduled today.")
+        if not users:
+            print(f"[{datetime.utcnow()}] Scheduler: No scheduled reports today.")
             return
-
+            
         redis_conn = Redis.from_url(os.getenv('REDIS_URL'))
-        task_queue = Queue(connection=redis_conn)
+        queue = Queue(connection=redis_conn)
         
-        print(f"Scheduler: Queuing {len(scheduled_users)} daily reports...")
+        print(f"[{datetime.utcnow()}] Scheduler: Queuing {users.count()} daily reports...")
         
-        for user in scheduled_users:
-            # Enqueue the report generation task for each user
-            task_queue.enqueue(
-                send_scheduled_report, 
-                user.id, 
-                user.scheduled_website, 
-                user.scheduled_email,
-                job_timeout='30m' 
-            )
-            print(f"  -> Queued report for user: {user.email}")
+        for user in users:
+            if user.scheduled_email and user.scheduled_website:
+                queue.enqueue(
+                    send_scheduled_report,
+                    user.id,
+                    user.scheduled_website,
+                    user.scheduled_email,
+                    job_timeout='30m'
+                )
+                print(f"  → Queued for {user.email} | {user.scheduled_website}")
 
 
 if __name__ == '__main__':
-    
-    REDIS_URL = os.getenv('REDIS_URL', 'redis://localhost:6379')
-    load_dotenv()
-    try:
-        # Use Redis.from_url to handle parsing the full URL (including auth/password)
-        redis_conn = Redis.from_url(REDIS_URL)
-        
-        # Check connection health
-        redis_conn.ping()
-        print("Successfully connected and authenticated with Redis.")
-        
-        # Initialize the RQ Scheduler
-        scheduler = Scheduler(connection=redis_conn)
-        
-        # Clear any existing jobs to ensure clean restart
-        scheduler.empty()
-
-        # Define the daily interval
-        daily_interval = timedelta(hours=24) 
-        
-        # Schedule the job. Run immediately upon startup, then every 24 hours.
-        scheduler.schedule(
-            scheduled_time=datetime.utcnow() + timedelta(seconds=10), 
-            func=queue_daily_reports,
-            interval=daily_interval,
-            repeat=None 
-        )
-        
-        print("RQ Scheduler started. Daily report queuing job is active.")
-        scheduler.run()
-            
-    except Exception as e:
-        print(f"FATAL: RQ Scheduler failed to start. Error: {e}")
+    redis_url = os.getenv('REDIS_URL')
+    if not redis_url:
+        print("FATAL: REDIS_URL environment variable is missing!")
         exit(1)
+
+    try:
+        conn = Redis.from_url(redis_url)
+        conn.ping()
+        print("Connected to Redis successfully")
+
+        scheduler = Scheduler(connection=conn)
+        scheduler.empty()  # clear old jobs on restart
+
+        # Run 30 seconds after startup, then every 24 hours
+        scheduler.schedule(
+            scheduled_time=datetime.utcnow() + timedelta(seconds=30),
+            func=queue_daily_reports,
+            interval=86400,  # 24 hours in seconds
+            repeat=None
+        )
+
+        print("RQ Scheduler started — daily reports active every 24h")
+        scheduler.run(burst=False)  # burst=False = run forever
+
+    except Exception as e:
+        print(f"FATAL: Scheduler crashed → {e}")
+        raise
