@@ -1,14 +1,12 @@
-# requirements.txt
-Flask
-Flask-SQLAlchemy
-psycopg2-binary
-python-dotenv
-gunicorn
-Flask-Bcrypt
-Flask-Login
-WeasyPrint
-Flask-Mail
-redis
-rq
-rq-scheduler
-uvicorn  <-- ADD THIS LINE
+Flask==2.3.3
+gunicorn==21.2.0
+Flask-SQLAlchemy==3.0.5
+Flask-Bcrypt==1.0.1
+Flask-Login==0.6.3
+Flask-Mail==0.9.1
+redis==5.0.1
+rq==1.15.1
+rq-scheduler==0.13.1
+weasyprint==62.2
+python-dotenv==1.0.0
+psycopg2-binary==2.9.9
