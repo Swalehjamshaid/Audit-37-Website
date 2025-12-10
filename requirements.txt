@@ -10,3 +10,5 @@ rq-scheduler==0.13.1
 weasyprint==62.2
 python-dotenv==1.0.0
 psycopg2-binary==2.9.9
+Flask-WTF==1.1.1       # Recommended: For secure web forms
+Flask-Migrate==4.0.5   # Recommended: For database schema management
