@@ -1,6 +1,7 @@
 # nixpacks.toml – FINAL VERSION (works 100% on Railway with WeasyPrint + multi-service)
 [phases.setup]
-  nixLibs = [
+# CORRECTED: Changed 'nixLibs' to 'nixPkgs'
+nixPkgs = [
     "glib",
     "gobject-introspection",
     "pango",
@@ -15,9 +16,10 @@
     "libwebp",
     "libxml2",
     "libxslt"
-  ]
+]
 
-  aptPkgs = [
+# This is a standard and comprehensive list of Debian/Ubuntu packages
+aptPkgs = [
     "libgobject-2.0-0",
     "libglib2.0-0",
     "libglib2.0-dev",
@@ -29,7 +31,7 @@
     "libgdk-pixbuf2.0-dev",
     "libatk1.0-0",
     "shared-mime-info"
-  ]
+]
 
 # ←←←←←←←←←←←←←←←←←←←←←←←←←←←←←←←←←←←←←←←←←←←←←←
 # IMPORTANT: NO [start] section here anymore!
