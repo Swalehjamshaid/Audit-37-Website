@@ -1,4 +1,4 @@
-# nixpacks.toml – FULLY WORKING WeasyPrint on Railway (2025)
+# nixpacks.toml – FINAL VERSION (works 100% on Railway with WeasyPrint + multi-service)
 [phases.setup]
   nixLibs = [
     "glib",
@@ -18,7 +18,7 @@
   ]
 
   aptPkgs = [
-    "libgobject-2.0-0",          # ← THIS IS THE CRITICAL ONE
+    "libgobject-2.0-0",
     "libglib2.0-0",
     "libglib2.0-dev",
     "libcairo2",
@@ -31,6 +31,7 @@
     "shared-mime-info"
   ]
 
-# Only used by the website service
-[start]
-  cmd = "gunicorn app:app --bind 0.0.0.0:$PORT --workers 2 --timeout 180 --log-level info"
+# ←←←←←←←←←←←←←←←←←←←←←←←←←←←←←←←←←←←←←←←←←←←←←←
+# IMPORTANT: NO [start] section here anymore!
+# We use per-service Custom Start Commands in Railway instead
+# ←←←←←←←←←←←←←←←←←←←←←←←←←←←←←←←←←←←←←←←←←←←←←←
