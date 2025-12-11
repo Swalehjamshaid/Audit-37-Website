@@ -1,90 +1,37 @@
-# scheduler.py (FINAL CORRECTED CODE)
+# worker.py (REQUIRED for RQ Task Processing)
 
 import os
 import sys
-from datetime import datetime, timedelta
-from redis import Redis
-from rq import Queue, Connection
-from rq_scheduler import Scheduler
+import redis
+from rq import Worker, Connection
 from dotenv import load_dotenv
 
-# Add the parent directory to the path to import app and its functions
+# Ensure the root directory is on the path to find 'app.py' and 'tasks.py'
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '.')))
 
-# Import the application context and task function from app.py
-from app import app, db, User, send_scheduled_report
+# Import the Flask application instance to load configuration and modules
+from app import app
 
-# --- Scheduler Logic ---
-
-def queue_daily_reports():
-    """
-    Function executed by the RQ Scheduler daily.
-    It checks the database for users who have scheduled reports
-    and queues a task for each of them.
-    """
-    with app.app_context():
-        # Find all users who have a scheduled website set
-        scheduled_users = User.query.filter(User.scheduled_website.isnot(None)).all()
-        
-        if not scheduled_users:
-            print(f"Scheduler: No active reports scheduled today.")
-            return
-
-        redis_conn = Redis.from_url(os.getenv('REDIS_URL'))
-        task_queue = Queue(connection=redis_conn)
-        
-        print(f"Scheduler: Queuing {len(scheduled_users)} daily reports...")
-        
-        for user in scheduled_users:
-            # Enqueue the report generation task for each user
-            task_queue.enqueue(
-                send_scheduled_report, 
-                user.id, 
-                user.scheduled_website, 
-                user.scheduled_email,
-                job_timeout='30m' 
-            )
-            print(f"  -> Queued report for user: {user.email}")
-
+load_dotenv()
 
 if __name__ == '__main__':
-    
-    # CRITICAL FIX: REMOVED the fallback value 'redis://localhost:6379'
     REDIS_URL = os.getenv('REDIS_URL')
-    load_dotenv()
+    
+    if not REDIS_URL:
+        print("FATAL: REDIS_URL environment variable is missing! Worker cannot start.")
+        sys.exit(1)
+        
     try:
-        # Check if the URL is missing before attempting connection
-        if not REDIS_URL:
-            raise EnvironmentError("REDIS_URL environment variable is missing!")
-
-        # Use Redis.from_url to handle parsing the full URL
-        redis_conn = Redis.from_url(REDIS_URL)
-        
-        # Check connection health
+        redis_conn = redis.from_url(REDIS_URL)
         redis_conn.ping()
-        print("Successfully connected and authenticated with Redis.")
         
-        # Initialize the RQ Scheduler
-        with Connection(redis_conn):
-            scheduler = Scheduler(connection=redis_conn)
-            
-            # Clear any existing jobs to ensure clean restart
-            scheduler.empty()
-
-            # Define the daily interval
-            daily_interval = timedelta(hours=24) 
-            
-            # Schedule the job. Run immediately upon startup, then every 24 hours.
-            scheduler.schedule(
-                scheduled_time=datetime.utcnow() + timedelta(seconds=10), 
-                func=queue_daily_reports,
-                interval=daily_interval,
-                repeat=None 
-            )
-            
-            print("RQ Scheduler started. Daily report queuing job is active.")
-            scheduler.run()
+        # Workers must be run within the application context to access db/config/etc.
+        with app.app_context():
+            print("RQ Worker starting up...")
+            # The worker listens on the 'default' queue (used by app.py and scheduler.py)
+            worker = Worker(['default'], connection=redis_conn)
+            worker.work()
             
     except Exception as e:
-        print(f"FATAL: RQ Scheduler failed to start. Error: {e}")
-        exit(1)
+        print(f"FATAL: RQ Worker failed to start. Error: {e}")
+        sys.exit(1)
