@@ -6,9 +6,8 @@ import redis
 from rq import Worker, Connection
 from dotenv import load_dotenv
 
-# --- Imports and Setup ---
-# All imports are absolute:
-from app import app 
+# --- Absolute Imports ---
+from app import app
 
 load_dotenv()
 
@@ -23,10 +22,8 @@ if __name__ == '__main__':
         redis_conn = redis.from_url(REDIS_URL)
         redis_conn.ping()
         
-        # Workers MUST run within the application context to access db/config
         with app.app_context():
             print("RQ Worker starting up...")
-            # The worker listens on the 'default' queue
             worker = Worker(['default'], connection=redis_conn)
             worker.work()
             
