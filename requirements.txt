@@ -1,3 +1,4 @@
+gunicorn==23.0.0
 # Web framework (change only if you use something else)
 Flask==3.0.3
 # or FastAPI==0.115.0
