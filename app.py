@@ -23,7 +23,6 @@ app = Flask(__name__)
 
 # ——— DATABASE ———
 DB_URL = os.getenv("DATABASE_URL")
-# Railway/Heroku sometimes use postgres://, SQLAlchemy requires postgresql://
 if DB_URL and DB_URL.startswith("postgres://"):
     DB_URL = DB_URL.replace("postgres://", "postgresql://", 1)
 app.config['SQLALCHEMY_DATABASE_URI'] = DB_URL or 'sqlite:///site.db'
@@ -50,11 +49,8 @@ def load_user(user_id):
     return User.query.get(int(user_id))
 
 # ——— REDIS QUEUE (optional) ———
-# FIX: Removed the extra unindented 'try:' which caused the IndentationError
 try:
-    # Use REDIS_URL from Railway environment or local fallback
     redis_conn = Redis.from_url(os.getenv('REDIS_URL') or os.getenv('REDIS_RAILWAY', 'redis://localhost:6379'))
-    # Test connection and initialize queue
     redis_conn.ping() 
     task_queue = Queue(connection=redis_conn)
     print("Redis Queue initialized successfully in app.py")
@@ -113,11 +109,10 @@ class AuditService:
         }
 
 # --- Import Task Function for inline queuing (Used in run_audit) ---
-# NOTE: This imports the task function defined in tasks.py
+# FIX: Using absolute import 'from tasks import ...' 
 try:
     from tasks import send_scheduled_report
 except ImportError:
-    # This prevents a circular import when running from gunicorn/worker
     send_scheduled_report = None
 
 
@@ -205,7 +200,6 @@ def report_pdf(report_id):
     metrics = json.loads(report.metrics_json)
     cat = {cat: {k: metrics.get(k, 'N/A') for k in items} for cat, items in AuditService.METRICS.items()}
     
-    # Logic moved to a helper function in tasks/app.py
     def generate_pdf_content(report, metrics):
         return render_template('report_pdf.html', report=report, metrics=metrics)
     
@@ -229,8 +223,8 @@ def schedule_report():
     current_user.scheduled_email = email
     db.session.commit()
     
-    # Use the task_queue instance initialized earlier
     if task_queue and send_scheduled_report:
+        # Enqueue the task using the imported absolute function reference
         task_queue.enqueue(send_scheduled_report, current_user.id, url, email, job_timeout='30m')
         flash('Scheduled + test email queued!', 'success')
     elif not task_queue:
@@ -250,5 +244,3 @@ def unschedule_report():
 # ——— STARTUP ———
 with app.app_context():
     create_admin_user()
-
-# NO app.run() — Gunicorn runs this
