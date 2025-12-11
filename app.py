@@ -23,6 +23,7 @@ app = Flask(__name__)
 
 # ——— DATABASE ———
 DB_URL = os.getenv("DATABASE_URL")
+# Railway/Heroku sometimes use postgres://, SQLAlchemy requires postgresql://
 if DB_URL and DB_URL.startswith("postgres://"):
     DB_URL = DB_URL.replace("postgres://", "postgresql://", 1)
 app.config['SQLALCHEMY_DATABASE_URI'] = DB_URL or 'sqlite:///site.db'
@@ -49,11 +50,16 @@ def load_user(user_id):
     return User.query.get(int(user_id))
 
 # ——— REDIS QUEUE (optional) ———
+# FIX: Removed the extra unindented 'try:' which caused the IndentationError
 try:
-try:
+    # Use REDIS_URL from Railway environment or local fallback
     redis_conn = Redis.from_url(os.getenv('REDIS_URL') or os.getenv('REDIS_RAILWAY', 'redis://localhost:6379'))
+    # Test connection and initialize queue
+    redis_conn.ping() 
     task_queue = Queue(connection=redis_conn)
-except:
+    print("Redis Queue initialized successfully in app.py")
+except Exception as e:
+    print(f"Warning: Could not connect to Redis/initialize Queue: {e}")
     task_queue = None
 
 # ——— MODELS ———
@@ -106,6 +112,15 @@ class AuditService:
             'metrics': detailed
         }
 
+# --- Import Task Function for inline queuing (Used in run_audit) ---
+# NOTE: This imports the task function defined in tasks.py
+try:
+    from tasks import send_scheduled_report
+except ImportError:
+    # This prevents a circular import when running from gunicorn/worker
+    send_scheduled_report = None
+
+
 # ——— ADMIN AUTO-CREATE ———
 def create_admin_user():
     with app.app_context():
@@ -117,33 +132,6 @@ def create_admin_user():
             admin = User(email=email, password=hashed, is_admin=True)
             db.session.add(admin)
             db.session.commit()
-
-# ——— PDF & EMAIL TASK ———
-def generate_pdf_content(report, metrics):
-    return render_template('report_pdf.html', report=report, metrics=metrics)
-
-def send_scheduled_report(user_id, url, recipient):
-    with app.app_context():
-        result = AuditService.run_audit(url)
-        report = AuditReport(
-            website_url=url,
-            performance_score=result['performance_score'],
-            security_score=result['security_score'],
-            accessibility_score=result['accessibility_score'],
-            metrics_json=json.dumps(result['metrics']),
-            user_id=user_id
-        )
-        db.session.add(report)
-        db.session.commit()
-
-        categorized = {cat: {k: result['metrics'][k] for k in items} for cat, items in AuditService.METRICS.items()}
-        html = generate_pdf_content(report, categorized)
-        pdf = HTML(string=html).write_pdf(stylesheets=[CSS(string='@page { size: A4; margin: 1.5cm } body { font-family: sans-serif; }')])
-
-        msg = Message(f"Daily Audit Report – {url}", recipients=[recipient])
-        msg.body = "Your daily audit report is attached."
-        msg.attach(f"Report_{report.id}.pdf", "application/pdf", pdf)
-        mail.send(msg)
 
 # ——— ROUTES ———
 @app.route('/')
@@ -216,6 +204,11 @@ def report_pdf(report_id):
         return redirect(url_for('dashboard'))
     metrics = json.loads(report.metrics_json)
     cat = {cat: {k: metrics.get(k, 'N/A') for k in items} for cat, items in AuditService.METRICS.items()}
+    
+    # Logic moved to a helper function in tasks/app.py
+    def generate_pdf_content(report, metrics):
+        return render_template('report_pdf.html', report=report, metrics=metrics)
+    
     html = generate_pdf_content(report, cat)
     pdf = HTML(string=html).write_pdf(stylesheets=[CSS(string='@page { size: A4; margin: 2cm } body { font-family: sans-serif; }')])
     response = make_response(pdf)
@@ -231,12 +224,18 @@ def schedule_report():
     if not url or not url.startswith(('http://', 'https://')):
         flash('Invalid URL', 'danger')
         return redirect(url_for('dashboard'))
+        
     current_user.scheduled_website = url
     current_user.scheduled_email = email
     db.session.commit()
-    if task_queue:
-        task_queue.enqueue(send_scheduled_report, current_user.id, url, email)
+    
+    # Use the task_queue instance initialized earlier
+    if task_queue and send_scheduled_report:
+        task_queue.enqueue(send_scheduled_report, current_user.id, url, email, job_timeout='30m')
         flash('Scheduled + test email queued!', 'success')
+    elif not task_queue:
+        flash('Schedule saved, but Redis is not connected. Worker/Scheduler will not run.', 'warning')
+    
     return redirect(url_for('dashboard'))
 
 @app.route('/unschedule', methods=['POST'])
