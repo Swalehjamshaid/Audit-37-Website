@@ -1,11 +1,13 @@
-# Official Python 3.13 on Debian Bookworm – works perfectly on Railway
+# ─────────────────────────────────────────────────────────────
+# FINAL WORKING DOCKERFILE – Python 3.13 + Railway (Dec 2025)
+# ─────────────────────────────────────────────────────────────
 FROM python:3.13-slim-bookworm
 
-# Best practices
+# Best practices for production containers
 ENV PYTHONDONTWRITEBYTECODE=1
 ENV PYTHONUNBUFFERED=1
 
-# Install WeasyPrint + PostgreSQL system dependencies
+# Install system dependencies for WeasyPrint + PostgreSQL driver
 RUN apt-get update && \
     apt-get install -y --no-install-recommends \
         libpango-1.0-0 \
@@ -20,20 +22,29 @@ RUN apt-get update && \
         build-essential \
     && rm -rf /var/lib/apt/lists/*
 
+# Set work directory
 WORKDIR /app
 
-# Virtual environment (optional but clean)
+# Optional: use a virtual env (cleaner, but not required)
 ENV VIRTUAL_ENV=/app/.venv
 RUN python -m venv $VIRTUAL_ENV
 ENV PATH="$VIRTUAL_ENV/bin:$PATH"
 
-# Copy and install Python dependencies
+# Install Python dependencies
 COPY requirements.txt .
 RUN pip install --upgrade pip && \
     pip install --no-cache-dir -r requirements.txt
 
-# Copy code
+# Copy your application code
 COPY . .
 
-# Production-ready start command using Gunicorn + auto $PORT from Railway
-CMD exec gunicorn --bind 0.0.0.0:$PORT --workers 2 --threads 4 --timeout 120 app:app
+# Expose nothing (Railway ignores it anyway)
+
+# Start command – uses Railway's $PORT automatically
+CMD exec gunicorn app:app \
+    --bind 0.0.0.0:$PORT \
+    --workers 2 \
+    --timeout 180 \
+    --log-level info \
+    --access-logfile - \
+    --error-logfile -
