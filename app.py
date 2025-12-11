@@ -22,15 +22,15 @@ load_dotenv()
 app = Flask(__name__)
 
 # --- Configuration ---
+# Database (PostgreSQL URL Fix for Railway)
 DB_URL = os.getenv("DATABASE_URL")
-# Ensure PostgreSQL URL is correctly formatted for SQLAlchemy
 if DB_URL and DB_URL.startswith("postgres://"):
     DB_URL = DB_URL.replace("postgres://", "postgresql://", 1)
 app.config['SQLALCHEMY_DATABASE_URI'] = DB_URL or 'sqlite:///site.db'
 app.config['SECRET_KEY'] = os.getenv('SECRET_KEY', 'change-me-in-production')
 app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
 
-# Email Configuration
+# Email Configuration (Uses standard environment variables)
 app.config['MAIL_SERVER'] = os.getenv('MAIL_SERVER', 'smtp.gmail.com')
 app.config['MAIL_PORT'] = int(os.getenv('MAIL_PORT', 587))
 app.config['MAIL_USE_TLS'] = os.getenv('MAIL_USE_TLS', 'True').lower() == 'true'
@@ -49,7 +49,7 @@ mail = Mail(app)
 def load_user(user_id):
     return User.query.get(int(user_id))
 
-# --- Redis/RQ Setup (Worker/Scheduler Integration) ---
+# --- Redis/RQ Setup (Indentation Error Fix Integrated) ---
 try:
     redis_conn = Redis.from_url(os.getenv('REDIS_URL') or os.getenv('REDIS_RAILWAY', 'redis://localhost:6379'))
     redis_conn.ping() 
@@ -79,7 +79,7 @@ class AuditReport(db.Model):
     accessibility_score = db.Column(db.Integer, default=0)
     user_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=False)
 
-# --- 37-METRIC AUDIT ENGINE ---
+# --- 37-METRIC AUDIT ENGINE (Simulated) ---
 class AuditService:
     METRICS = {
         "Performance": ["1. Page Load Speed (LCP)", "2. First Contentful Paint (FCP)", "3. Total Blocking Time (TBT)", "4. Cumulative Layout Shift (CLS)", "5. Time to Interactive (TTI)", "6. Server Response Time (TTFB)", "7. Image Optimization Status", "8. Render Blocking Resources", "9. Gzip/Brotli Compression", "10. Caching Policy", "11. Network Payload Size", "12. JavaScript Execution Time"],
@@ -111,7 +111,6 @@ class AuditService:
 
 # --- Task Integration (Absolute Import FIX) ---
 try:
-    # Use absolute import: ensures Gunicorn can find the task module
     from tasks import send_scheduled_report
 except ImportError:
     send_scheduled_report = None
@@ -129,9 +128,8 @@ def create_admin_user():
             db.session.add(admin)
             db.session.commit()
 
-# --- Routes ---
+# --- Routes (Omitted for brevity, assumed correct) ---
 @app.route('/')
-# ... [All other routes remain the same, ensure all code matches the previous absolute-imported versions] ...
 def home():
     return redirect(url_for('dashboard')) if current_user.is_authenticated else render_template('index.html')
 
@@ -246,5 +244,3 @@ def unschedule_report():
 # --- Application Startup ---
 with app.app_context():
     create_admin_user()
-
-# Gunicorn runs the 'app' instance
