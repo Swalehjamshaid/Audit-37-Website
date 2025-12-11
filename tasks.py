@@ -1,4 +1,4 @@
-# tasks.py (FINAL CORRECTED CODE)
+# tasks.py (FINAL, ORGANIZED, RAILWAY-READY CODE)
 
 import json
 from weasyprint import HTML, CSS
@@ -9,6 +9,7 @@ from app import app, db, mail, AuditService, User, AuditReport
 
 
 def send_scheduled_report(user_id, url, recipient_email):
+    # Use the imported 'app' instance for application context
     with app.app_context(): 
         audit_results = AuditService.run_audit(url)
         user = User.query.get(user_id)
