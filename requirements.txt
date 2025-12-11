@@ -1,32 +1,21 @@
-gunicorn==23.0.0
-# Web framework (change only if you use something else)
 Flask==3.0.3
-# or FastAPI==0.115.0
-# or Django==5.1.3
+Flask-SQLAlchemy==3.1.1
+Flask-Bcrypt==1.0.1
+Flask-Login==0.6.3
+Flask-Mail==0.10.0
+Werkzeug==3.0.4
 
-# ASGI server (recommended instead of running python app.py directly)
-gunicorn==23.0.0
-# or uvicorn[standard]==0.30.6
+# Modern PostgreSQL driver – NO compilation needed
+psycopg[binary]>=3.2.1
 
-# PostgreSQL — THIS IS THE IMPORTANT ONE
-psycopg[binary]>=3.2.1        # Modern replacement for psycopg2-binary → no compilation ever
-
-# WeasyPrint and its Python dependencies
+# WeasyPrint and its direct Python deps
 WeasyPrint==62.3
 cairocffi==1.7.1
-CairoSVG==2.7.1
-cssselect2==0.7.0
-tinycss2==1.3.0
-Pillow==10.4.0
 
-# Common utilities you probably already have
-requests==2.32.3
+# Background tasks
+redis==5.0.8
+rq==1.16.2
+
+# Utilities
 python-dotenv==1.0.1
-celery==5.4.0              # if you use Worker
-redis==5.0.8               # if you use Redis broker
-
-# Any other packages you actually use, just keep them as-is
-# Example:
-# sqlalchemy==2.0.35
-# alembic==1.13.2
-# pydantic==2.9.2
+gunicorn==23.0.0
