@@ -1,5 +1,4 @@
-# app.py — FINAL 100% WORKING VERSION (Railway + Python 3.13)
-# 37-metric Web Audit Tool – Login, PDF, Email, Scheduling – ALL WORKING
+# app.py — FINAL, ORGANIZED, RAILWAY-READY CODE
 
 import os
 import json
@@ -18,18 +17,20 @@ from redis import Redis
 from rq import Queue
 from weasyprint import HTML, CSS
 
+# --- Environment and App Setup ---
 load_dotenv()
 app = Flask(__name__)
 
-# ——— DATABASE ———
+# --- Configuration ---
 DB_URL = os.getenv("DATABASE_URL")
+# Ensure PostgreSQL URL is correctly formatted for SQLAlchemy
 if DB_URL and DB_URL.startswith("postgres://"):
     DB_URL = DB_URL.replace("postgres://", "postgresql://", 1)
 app.config['SQLALCHEMY_DATABASE_URI'] = DB_URL or 'sqlite:///site.db'
 app.config['SECRET_KEY'] = os.getenv('SECRET_KEY', 'change-me-in-production')
 app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
 
-# ——— EMAIL ———
+# Email Configuration
 app.config['MAIL_SERVER'] = os.getenv('MAIL_SERVER', 'smtp.gmail.com')
 app.config['MAIL_PORT'] = int(os.getenv('MAIL_PORT', 587))
 app.config['MAIL_USE_TLS'] = os.getenv('MAIL_USE_TLS', 'True').lower() == 'true'
@@ -37,7 +38,7 @@ app.config['MAIL_USERNAME'] = os.getenv('MAIL_USERNAME')
 app.config['MAIL_PASSWORD'] = os.getenv('MAIL_PASSWORD')
 app.config['MAIL_DEFAULT_SENDER'] = os.getenv('MAIL_DEFAULT_SENDER')
 
-# ——— EXTENSIONS ———
+# --- Extensions ---
 db = SQLAlchemy(app)
 bcrypt = Bcrypt(app)
 login_manager = LoginManager(app)
@@ -48,7 +49,7 @@ mail = Mail(app)
 def load_user(user_id):
     return User.query.get(int(user_id))
 
-# ——— REDIS QUEUE (optional) ———
+# --- Redis/RQ Setup (Worker/Scheduler Integration) ---
 try:
     redis_conn = Redis.from_url(os.getenv('REDIS_URL') or os.getenv('REDIS_RAILWAY', 'redis://localhost:6379'))
     redis_conn.ping() 
@@ -58,7 +59,7 @@ except Exception as e:
     print(f"Warning: Could not connect to Redis/initialize Queue: {e}")
     task_queue = None
 
-# ——— MODELS ———
+# --- MODELS ---
 class User(db.Model, UserMixin):
     id = db.Column(db.Integer, primary_key=True)
     email = db.Column(db.String(120), unique=True, nullable=False)
@@ -78,7 +79,7 @@ class AuditReport(db.Model):
     accessibility_score = db.Column(db.Integer, default=0)
     user_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=False)
 
-# ——— 37-METRIC AUDIT ENGINE ———
+# --- 37-METRIC AUDIT ENGINE ---
 class AuditService:
     METRICS = {
         "Performance": ["1. Page Load Speed (LCP)", "2. First Contentful Paint (FCP)", "3. Total Blocking Time (TBT)", "4. Cumulative Layout Shift (CLS)", "5. Time to Interactive (TTI)", "6. Server Response Time (TTFB)", "7. Image Optimization Status", "8. Render Blocking Resources", "9. Gzip/Brotli Compression", "10. Caching Policy", "11. Network Payload Size", "12. JavaScript Execution Time"],
@@ -108,15 +109,15 @@ class AuditService:
             'metrics': detailed
         }
 
-# --- Import Task Function for inline queuing (Used in run_audit) ---
-# FIX: Using absolute import 'from tasks import ...' 
+# --- Task Integration (Absolute Import FIX) ---
 try:
+    # Use absolute import: ensures Gunicorn can find the task module
     from tasks import send_scheduled_report
 except ImportError:
     send_scheduled_report = None
 
 
-# ——— ADMIN AUTO-CREATE ———
+# --- Admin User Creation ---
 def create_admin_user():
     with app.app_context():
         db.create_all()
@@ -128,8 +129,9 @@ def create_admin_user():
             db.session.add(admin)
             db.session.commit()
 
-# ——— ROUTES ———
+# --- Routes ---
 @app.route('/')
+# ... [All other routes remain the same, ensure all code matches the previous absolute-imported versions] ...
 def home():
     return redirect(url_for('dashboard')) if current_user.is_authenticated else render_template('index.html')
 
@@ -224,7 +226,6 @@ def schedule_report():
     db.session.commit()
     
     if task_queue and send_scheduled_report:
-        # Enqueue the task using the imported absolute function reference
         task_queue.enqueue(send_scheduled_report, current_user.id, url, email, job_timeout='30m')
         flash('Scheduled + test email queued!', 'success')
     elif not task_queue:
@@ -241,6 +242,9 @@ def unschedule_report():
     flash('Schedule cancelled', 'info')
     return redirect(url_for('dashboard'))
 
-# ——— STARTUP ———
+
+# --- Application Startup ---
 with app.app_context():
     create_admin_user()
+
+# Gunicorn runs the 'app' instance
