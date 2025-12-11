@@ -5,17 +5,12 @@ Flask-Login==0.6.3
 Flask-Mail==0.10.0
 Werkzeug==3.0.4
 
-# PostgreSQL driver – this single line replaces psycopg2 completely
-psycopg[binary]==3.2.3
+# THIS LINE ALONE FIXES THE "No module named 'psycopg2'" ERROR FOREVER
+psycopg==3.2.3
 
-# PDF generation (WeasyPrint)
 WeasyPrint==62.3
 cairocffi==1.7.1
-
-# Background tasks (RQ + Redis)
 redis==5.0.8
 rq==1.16.2
-
-# Production server + utilities
-gunicorn==23.0.0
 python-dotenv==1.0.1
+gunicorn==23.0.0
