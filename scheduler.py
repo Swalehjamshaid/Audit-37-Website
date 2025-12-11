@@ -1,4 +1,4 @@
-# scheduler.py (FINAL CORRECTED CODE)
+# scheduler.py (FINAL, ORGANIZED, RAILWAY-READY CODE)
 
 import os
 import sys
@@ -8,21 +8,25 @@ from rq import Queue, Connection
 from rq_scheduler import Scheduler
 from dotenv import load_dotenv
 
-# Ensure the root directory is on the path to find 'app.py' and 'tasks.py'
+# --- Ensure Path is Correct ---
+# We use absolute imports (from app import ...) so the root path must be included
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '.')))
 
-# Import the application context and task function
-from app import app, db, User # Import 'app' instance for context
-from tasks import send_scheduled_report # Import the task function
+# --- Absolute Imports ---
+# Import the application instance and models from your app.py
+from app import app, db, User 
+# Import the task function from your tasks.py
+from tasks import send_scheduled_report 
 
 # --- Scheduler Logic ---
 
 def queue_daily_reports():
     """
     Function executed by the RQ Scheduler daily.
-    Queues a task for each user with a scheduled report.
+    It checks the database for users who have scheduled reports
+    and queues a task for each of them.
     """
-    # Use the imported 'app' instance to ensure context is available
+    # CRITICAL: Must use the app instance's context to access the database
     with app.app_context():
         # Find all users who have a scheduled website set
         scheduled_users = User.query.filter(User.scheduled_website.isnot(None)).all()
@@ -31,6 +35,7 @@ def queue_daily_reports():
             print(f"Scheduler: No active reports scheduled today.")
             return
 
+        # Connect to Redis and initialize the Queue
         redis_conn = Redis.from_url(os.getenv('REDIS_URL'))
         task_queue = Queue(connection=redis_conn)
         
@@ -54,6 +59,7 @@ if __name__ == '__main__':
     
     try:
         if not REDIS_URL:
+            # Raise an error if the key environment variable is missing
             raise EnvironmentError("FATAL: REDIS_URL environment variable is missing!")
 
         redis_conn = Redis.from_url(REDIS_URL)
@@ -64,7 +70,7 @@ if __name__ == '__main__':
         with Connection(redis_conn):
             scheduler = Scheduler(connection=redis_conn)
             
-            # Clear any existing jobs to ensure clean restart
+            # Clear any existing jobs to ensure clean restart on deployment
             scheduler.empty()
 
             daily_interval = timedelta(hours=24)
@@ -78,10 +84,8 @@ if __name__ == '__main__':
             )
             
             print("RQ Scheduler started. Daily report queuing job is active.")
-            # scheduler.run() keeps the scheduler running indefinitely
             scheduler.run()
             
     except Exception as e:
         print(f"FATAL: RQ Scheduler failed to start. Error: {e}")
-        # The exit code ensures Railway/container knows the process failed to start
         sys.exit(1)
