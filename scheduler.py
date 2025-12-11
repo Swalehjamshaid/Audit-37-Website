@@ -10,4 +10,5 @@ sys.path.insert(0, os.path.abspath(os.path.dirname(__file__)))
 
 # --- Absolute Imports ---
 from app import app, db, User 
+from tasks import send_scheduled_report
 # ... rest of the file ...
