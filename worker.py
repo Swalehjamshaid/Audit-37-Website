@@ -1,4 +1,4 @@
-# worker.py (REQUIRED for RQ Task Processing)
+# worker.py (FINAL, ORGANIZED, RAILWAY-READY CODE)
 
 import os
 import sys
@@ -6,11 +6,9 @@ import redis
 from rq import Worker, Connection
 from dotenv import load_dotenv
 
-# Ensure the root directory is on the path to find 'app.py' and 'tasks.py'
-sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '.')))
-
-# Import the Flask application instance to load configuration and modules
-from app import app
+# --- Imports and Setup ---
+# All imports are absolute:
+from app import app 
 
 load_dotenv()
 
@@ -25,10 +23,10 @@ if __name__ == '__main__':
         redis_conn = redis.from_url(REDIS_URL)
         redis_conn.ping()
         
-        # Workers must be run within the application context to access db/config/etc.
+        # Workers MUST run within the application context to access db/config
         with app.app_context():
             print("RQ Worker starting up...")
-            # The worker listens on the 'default' queue (used by app.py and scheduler.py)
+            # The worker listens on the 'default' queue
             worker = Worker(['default'], connection=redis_conn)
             worker.work()
             
