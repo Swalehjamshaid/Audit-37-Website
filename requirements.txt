@@ -5,10 +5,10 @@ Flask-Login==0.6.3
 Flask-Mail==0.10.0
 Werkzeug==3.0.4
 
-# Modern PostgreSQL driver – NO compilation needed
-psycopg[binary]>=3.2.1
+# PostgreSQL – this is the ONLY line you need for 2025
+psycopg[binary]==3.2.3
 
-# WeasyPrint and its direct Python deps
+# PDF generation
 WeasyPrint==62.3
 cairocffi==1.7.1
 
@@ -16,6 +16,6 @@ cairocffi==1.7.1
 redis==5.0.8
 rq==1.16.2
 
-# Utilities
+# Utilities + production server
 python-dotenv==1.0.1
 gunicorn==23.0.0
